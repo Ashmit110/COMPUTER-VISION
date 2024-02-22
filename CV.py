@@ -52,7 +52,7 @@ class Encoder(nn.Module):
         x = self.flatten(x)
         x = self.encoder_lin(x)
         mu,sigma=self.encoded_space_2mu(x),self.encoded_space_2sigma(x)
-        return mu,torch.abs(sigma)*10
+        return mu,torch.abs(sigma)
 class Decoder(nn.Module):
     
     def __init__(self, encoded_space_dim):
@@ -172,7 +172,7 @@ def train_epoch(encoder, decoder, device, dataloader, loss_fn, optimizer):
         encoded_data=mu+sigma*torch.randn_like(sigma)#this line ensure normal distribution
         decoded_data = decoder(encoded_data)
         # Evaluate loss
-        kl_div_loss=-0.2*torch.mean(1+torch.log(sigma+(1e-13))-torch.pow(mu,2)-torch.pow(sigma,2))
+        kl_div_loss=-0.11*torch.mean(1+torch.log(sigma+(1e-13))-torch.pow(mu,2)-torch.pow(sigma,2))
         loss = loss_fn(decoded_data, image_batch)+kl_div_loss
         # Backward pass
         optimizer.zero_grad()
