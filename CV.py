@@ -136,7 +136,7 @@ valid_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,shuffle=True)
 
 loss_fn=torch.nn.MSELoss()
-lr=0.001
+lr=0.00007
 
 # torch.manual_seed(0)
 d=32
@@ -146,7 +146,7 @@ decoder=Decoder(encoded_space_dim=d)
 params_to_optimize=[{'params':encoder.parameters()},
                     {'params':decoder.parameters()}]
 
-optim=torch.optim.Adam(params_to_optimize,lr=lr,weight_decay=1e-05)
+optim=torch.optim.Adam(params_to_optimize,lr=lr,weight_decay=1e-08)
 
 device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 print(f'Selcected device {device}')
@@ -172,10 +172,7 @@ def train_epoch(encoder, decoder, device, dataloader, loss_fn, optimizer):
         encoded_data=mu+sigma*torch.randn_like(sigma)#this line ensure normal distribution
         decoded_data = decoder(encoded_data)
         # Evaluate loss
-        kl_div_loss=torch.sum(-torch.pow(sigma,2)-torch.pow(mu,2)+torch.log(sigma)+1)
-        # kl_div_loss=0
-        kl_div_loss=-0.05*torch.mean(1+torch.log(sigma+(1e-13))-torch.pow(mu,2)-torch.pow(sigma,2))
-        # kl_div_loss = 0.5 * torch.sum(mu ** 2 + sigma ** 2 - torch.log(1e-8 + sigma ** 2) - 1) / np.prod(sigma.shape)
+        kl_div_loss=-0.06*torch.mean(1+torch.log(sigma+(1e-13))-torch.pow(mu,2)-torch.pow(sigma,2))
         loss = loss_fn(decoded_data, image_batch)+kl_div_loss
         # Backward pass
         optimizer.zero_grad()
@@ -219,7 +216,7 @@ def test_epoch(encoder, decoder, device, dataloader, loss_fn):
 
 load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder"),encoder,optim)
 load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder"),decoder,optim)
-num_epochs = 65
+num_epochs = 200
 diz_loss = {'train_loss':[],'val_loss':[]}
 for epoch in range(num_epochs):
    train_loss =train_epoch(encoder,decoder,device,
