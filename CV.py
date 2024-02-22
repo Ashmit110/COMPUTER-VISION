@@ -225,13 +225,13 @@ load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_
 
 num_epochs = 60
 diz_loss = {'train_loss':[],'val_loss':[]}
-# for epoch in range(num_epochs):
-#    train_loss =train_epoch(encoder,decoder,device,
-#    train_loader,loss_fn,optim)
-#    val_loss = test_epoch(encoder,decoder,device,valid_loader,loss_fn)
-#    print('\n EPOCH {}/{} \t train loss {} \t val loss {}'.format(epoch + 1, num_epochs,train_loss,val_loss))
-#    diz_loss['train_loss'].append(train_loss)
-#    diz_loss['val_loss'].append(val_loss)
+for epoch in range(num_epochs):
+   train_loss =train_epoch(encoder,decoder,device,
+   train_loader,loss_fn,optim)
+   val_loss = test_epoch(encoder,decoder,device,valid_loader,loss_fn)
+   print('\n EPOCH {}/{} \t train loss {} \t val loss {}'.format(epoch + 1, num_epochs,train_loss,val_loss))
+   diz_loss['train_loss'].append(train_loss)
+   diz_loss['val_loss'].append(val_loss)
    
 
 
@@ -267,16 +267,16 @@ checkpoint_encoder={
                "state_dict":encoder.state_dict(),
                "optimizer": optim.state_dict(),
            }
-# save_checkpoint(checkpoint_encoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder")
+save_checkpoint(checkpoint_encoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder")
 
 checkpoint_decoder={
                "state_dict":decoder.state_dict(),
                "optimizer": optim.state_dict(),
            }
-# save_checkpoint(checkpoint_decoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder")
+save_checkpoint(checkpoint_decoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder")
 
 
-# plot_ae_outputs(encoder,decoder,n=10)
+plot_ae_outputs(encoder,decoder,n=10)
 
 def latent_space_sampling(type,encoder,decoder):
     
