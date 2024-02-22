@@ -136,7 +136,7 @@ valid_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,shuffle=True)
 
 loss_fn=torch.nn.MSELoss()
-lr=0.00007
+lr=0.00005
 
 # torch.manual_seed(0)
 d=32
@@ -146,7 +146,7 @@ decoder=Decoder(encoded_space_dim=d)
 params_to_optimize=[{'params':encoder.parameters()},
                     {'params':decoder.parameters()}]
 
-optim=torch.optim.Adam(params_to_optimize,lr=lr,weight_decay=1e-08)
+optim=torch.optim.Adam(params_to_optimize,lr=lr,weight_decay=1e-10)
 
 device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 print(f'Selcected device {device}')
@@ -216,7 +216,7 @@ def test_epoch(encoder, decoder, device, dataloader, loss_fn):
 
 load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder"),encoder,optim)
 load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder"),decoder,optim)
-num_epochs = 5
+num_epochs = 60
 diz_loss = {'train_loss':[],'val_loss':[]}
 for epoch in range(num_epochs):
    train_loss =train_epoch(encoder,decoder,device,
@@ -225,7 +225,7 @@ for epoch in range(num_epochs):
    print('\n EPOCH {}/{} \t train loss {} \t val loss {}'.format(epoch + 1, num_epochs,train_loss,val_loss))
    diz_loss['train_loss'].append(train_loss)
    diz_loss['val_loss'].append(val_loss)
-   plot_ae_outputs(encoder,decoder,n=10)
+   
 
 
 encoded_samples = []
@@ -268,4 +268,4 @@ checkpoint_decoder={
 save_checkpoint(checkpoint_decoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder")
 
 
-
+plot_ae_outputs(encoder,decoder,n=10)
