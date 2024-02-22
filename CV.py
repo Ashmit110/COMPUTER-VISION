@@ -216,7 +216,7 @@ def test_epoch(encoder, decoder, device, dataloader, loss_fn):
 
 load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder"),encoder,optim)
 load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder"),decoder,optim)
-num_epochs = 200
+num_epochs = 5
 diz_loss = {'train_loss':[],'val_loss':[]}
 for epoch in range(num_epochs):
    train_loss =train_epoch(encoder,decoder,device,
@@ -225,7 +225,7 @@ for epoch in range(num_epochs):
    print('\n EPOCH {}/{} \t train loss {} \t val loss {}'.format(epoch + 1, num_epochs,train_loss,val_loss))
    diz_loss['train_loss'].append(train_loss)
    diz_loss['val_loss'].append(val_loss)
-#    plot_ae_outputs(encoder,decoder,n=10)
+   plot_ae_outputs(encoder,decoder,n=10)
 
 
 encoded_samples = []
