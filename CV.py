@@ -163,6 +163,7 @@ def train_epoch(encoder, decoder, device, dataloader, loss_fn, optimizer):
     # Iterate the dataloader (we do not need the label values, this is unsupervised learning)
     for image_batch, _ in dataloader: # with "_" we just ignore the labels (the second element of the dataloader tuple)
         # Move tensor to the proper device
+        
         image_batch = image_batch.to(device)
         # Encode data
         mu,sigma = encoder(image_batch)
@@ -181,6 +182,7 @@ def train_epoch(encoder, decoder, device, dataloader, loss_fn, optimizer):
         # Print batch loss
         # print('\t partial train loss (single batch): %f' % (loss.item()))
         train_loss.append(loss.item())
+        print(mu.shape)
     
 
     return np.mean(train_loss)
@@ -214,18 +216,24 @@ def test_epoch(encoder, decoder, device, dataloader, loss_fn):
     return val_loss.item()
 
 
+
 load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder"),encoder,optim)
 load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder"),decoder,optim)
+
+
+
+
 num_epochs = 60
 diz_loss = {'train_loss':[],'val_loss':[]}
-for epoch in range(num_epochs):
-   train_loss =train_epoch(encoder,decoder,device,
-   train_loader,loss_fn,optim)
-   val_loss = test_epoch(encoder,decoder,device,valid_loader,loss_fn)
-   print('\n EPOCH {}/{} \t train loss {} \t val loss {}'.format(epoch + 1, num_epochs,train_loss,val_loss))
-   diz_loss['train_loss'].append(train_loss)
-   diz_loss['val_loss'].append(val_loss)
+# for epoch in range(num_epochs):
+#    train_loss =train_epoch(encoder,decoder,device,
+#    train_loader,loss_fn,optim)
+#    val_loss = test_epoch(encoder,decoder,device,valid_loader,loss_fn)
+#    print('\n EPOCH {}/{} \t train loss {} \t val loss {}'.format(epoch + 1, num_epochs,train_loss,val_loss))
+#    diz_loss['train_loss'].append(train_loss)
+#    diz_loss['val_loss'].append(val_loss)
    
+
 
 
 encoded_samples = []
@@ -259,13 +267,47 @@ checkpoint_encoder={
                "state_dict":encoder.state_dict(),
                "optimizer": optim.state_dict(),
            }
-save_checkpoint(checkpoint_encoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder")
+# save_checkpoint(checkpoint_encoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder")
 
 checkpoint_decoder={
                "state_dict":decoder.state_dict(),
                "optimizer": optim.state_dict(),
            }
-save_checkpoint(checkpoint_decoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder")
+# save_checkpoint(checkpoint_decoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder")
 
 
-plot_ae_outputs(encoder,decoder,n=10)
+# plot_ae_outputs(encoder,decoder,n=10)
+
+def latent_space_sampling(type,encoder,decoder):
+    
+    def show_image(img):
+        npimg = img.numpy()
+        plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
+    encoder.eval()
+    decoder.eval()
+
+    with torch.no_grad():
+        # calculate mean and std of latent code, generated takining in test images as inputs 
+        for images, labels in test_loader:
+            images = images.to(device)
+            mu,sigma = encoder(images)
+            
+
+            
+
+            # sample latent vectors from the normal distribution
+            latent = torch.randn_like(sigma)*sigma + mu
+
+            # reconstruct images from the random latent vectors
+            
+            img_recon = decoder(latent)
+            img_recon = img_recon.cpu()
+            
+
+            fig, ax = plt.subplots(figsize=(20, 8.5))
+            show_image(torchvision.utils.make_grid(img_recon[:100],10,5))
+            plt.show()
+            break
+
+latent_space_sampling("test",encoder,decoder)
