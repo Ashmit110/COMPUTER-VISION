@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader,random_split
 from torch import nn
 import torch.nn.functional as F
 import torch.optim as optim
-
+'''--------------------------Defining function so that i can save progress-----------------------------------'''
 def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
     print("=> Saving checkpoint")
     torch.save(state, filename)
@@ -20,6 +20,8 @@ def load_checkpoint(checkpoint, model, optimizer):
     model.load_state_dict(checkpoint["state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer"])
 
+'''-----------------------------------------------------------------------------------------------------------'''
+'''defining network architecture'''
 class Encoder(nn.Module):
     
     def __init__(self, encoded_space_dim,):
@@ -110,10 +112,11 @@ def plot_ae_outputs(encoder,decoder,n=10):
       if i == n//2:
          ax.set_title('Reconstructed images')
     plt.show()   
-data_dir = r'C:\python learning\andrew ng\dataset\MNIST'
+'''--------------------------------------loading data and setting up data loaders-----------------------------------------------'''
+data_dir = r'C:\python learning\SAIDL\COMPUTER VISION\dataset'
 
-train_dataset = torchvision.datasets.MNIST(data_dir, train=True, download=True)
-test_dataset  = torchvision.datasets.MNIST(data_dir, train=False, download=True)
+train_dataset = torchvision.datasets.MNIST(data_dir, train=True, download=False)
+test_dataset  = torchvision.datasets.MNIST(data_dir, train=False, download=False)
 
 train_transform = transforms.Compose([
 transforms.ToTensor(),
@@ -134,12 +137,14 @@ batch_size=256
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size)
 valid_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,shuffle=True)
-
+'''--------------------------------------------------------------------------------------------'''
 loss_fn=torch.nn.MSELoss()
 lr=0.000001
-
-# torch.manual_seed(0)
+load_params=True
+num_epochs = 0
 d=32
+
+
 
 encoder=Encoder(encoded_space_dim=d)
 decoder=Decoder(encoded_space_dim=d)
@@ -216,68 +221,72 @@ def test_epoch(encoder, decoder, device, dataloader, loss_fn):
     return val_loss.item()
 
 
+'''loading last saved parameters'''
+if load_params==True:
+    load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder"),encoder,optim)
+    load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder"),decoder,optim)
 
-load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder"),encoder,optim)
-load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder"),decoder,optim)
 
 
+'''------------------------------------------Training the model updating parameters---------------------------------------------------------'''
 
-
-# num_epochs = 0
-# diz_loss = {'train_loss':[],'val_loss':[]}
-# for epoch in range(num_epochs):
-#    train_loss =train_epoch(encoder,decoder,device,
-#    train_loader,loss_fn,optim)
-#    val_loss = test_epoch(encoder,decoder,device,valid_loader,loss_fn)
-#    print('\n EPOCH {}/{} \t train loss {} \t val loss {}'.format(epoch + 1, num_epochs,train_loss,val_loss))
-#    diz_loss['train_loss'].append(train_loss)
-#    diz_loss['val_loss'].append(val_loss)
+diz_loss = {'train_loss':[],'val_loss':[]}
+for epoch in range(num_epochs):
+   train_loss =train_epoch(encoder,decoder,device,
+   train_loader,loss_fn,optim)
+   val_loss = test_epoch(encoder,decoder,device,valid_loader,loss_fn)
+   print('\n EPOCH {}/{} \t train loss {} \t val loss {}'.format(epoch + 1, num_epochs,train_loss,val_loss))
+   diz_loss['train_loss'].append(train_loss)
+   diz_loss['val_loss'].append(val_loss)
    
 
 
+'''------------------------------------------------plotting latent space in 2d using tsne dimention reduction----------------------------------------------------------------'''
+encoded_samples = []
+from tqdm import tqdm
+for sample in tqdm(test_dataset):
+    img = sample[0].unsqueeze(0).to(device)
+    label = sample[1]
+    # Encode image
+    encoder.eval()
+    with torch.no_grad():
+        encoded_img  = encoder(img)
+    # Append to list
+    encoded_img = encoded_img[0].flatten().cpu().numpy()
+    encoded_sample = {f"Enc. Variable {i}": enc for i, enc in enumerate(encoded_img)}
+    encoded_sample['label'] = label
+    encoded_samples.append(encoded_sample)
+encoded_samples = pd.DataFrame(encoded_samples)
+encoded_samples
 
-# encoded_samples = []
-# from tqdm import tqdm
-# for sample in tqdm(test_dataset):
-#     img = sample[0].unsqueeze(0).to(device)
-#     label = sample[1]
-#     # Encode image
-#     encoder.eval()
-#     with torch.no_grad():
-#         encoded_img  = encoder(img)
-#     # Append to list
-#     encoded_img = encoded_img[0].flatten().cpu().numpy()
-#     encoded_sample = {f"Enc. Variable {i}": enc for i, enc in enumerate(encoded_img)}
-#     encoded_sample['label'] = label
-#     encoded_samples.append(encoded_sample)
-# encoded_samples = pd.DataFrame(encoded_samples)
-# encoded_samples
+from sklearn.manifold import TSNE
+import plotly.express as px
 
-# from sklearn.manifold import TSNE
-# import plotly.express as px
+tsne = TSNE(n_components=2)
+tsne_results = tsne.fit_transform(encoded_samples.drop(['label'],axis=1))
+fig = px.scatter(tsne_results, x=0, y=1,
+                  color=encoded_samples.label.astype(str),
+                    labels={'0': 'tsne-2d-one', '1': 'tsne-2d-two'})
+fig.show()
+'''-----------------------------saving updated parameters------------------------------------'''
+checkpoint_encoder={
+               "state_dict":encoder.state_dict(),
+               "optimizer": optim.state_dict(),
+           }
+save_checkpoint(checkpoint_encoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder")
 
-# tsne = TSNE(n_components=2)
-# tsne_results = tsne.fit_transform(encoded_samples.drop(['label'],axis=1))
-# fig = px.scatter(tsne_results, x=0, y=1,
-#                   color=encoded_samples.label.astype(str),
-#                     labels={'0': 'tsne-2d-one', '1': 'tsne-2d-two'})
-# fig.show()
+checkpoint_decoder={
+               "state_dict":decoder.state_dict(),
+               "optimizer": optim.state_dict(),
+           }
+save_checkpoint(checkpoint_decoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder")
 
-# checkpoint_encoder={
-#                "state_dict":encoder.state_dict(),
-#                "optimizer": optim.state_dict(),
-#            }
-# save_checkpoint(checkpoint_encoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_encoder")
-
-# checkpoint_decoder={
-#                "state_dict":decoder.state_dict(),
-#                "optimizer": optim.state_dict(),
-#            }
-# save_checkpoint(checkpoint_decoder,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_decoder")
+'''----------------------------------------plotting reconstructed images---------------------------------------------------------'''
 
 
-# plot_ae_outputs(encoder,decoder,n=10)
-
+plot_ae_outputs(encoder,decoder,n=10)
+'''--------------------------------------plotting random samples from latent space----------------------------------------------------------'''
+''''''
 def latent_space_sampling(distribution,encoder,decoder):
     
     def show_image(img):
@@ -292,10 +301,6 @@ def latent_space_sampling(distribution,encoder,decoder):
         for images, labels in test_loader:
             images = images.to(device)
             mu,sigma = encoder(images)
-            
-            
-
-            
 
             # sample latent vectors from the normal distribution
             latent = torch.rand_like(mu)
@@ -310,9 +315,6 @@ def latent_space_sampling(distribution,encoder,decoder):
             latent = 1+(2)*torch.rand_like(mu)
             break
 
-            
-
-
     # reconstruct images from the random latent vectors
             
     img_recon = decoder(latent)
@@ -324,4 +326,6 @@ def latent_space_sampling(distribution,encoder,decoder):
     plt.show()
             
 
-latent_space_sampling("gauss",encoder,decoder)
+latent_space_sampling("normal",encoder,decoder)
+
+'''------------------------------------------------------------------------------------'''
