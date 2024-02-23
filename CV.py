@@ -139,9 +139,9 @@ valid_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,shuffle=True)
 '''--------------------------------------------------------------------------------------------'''
 loss_fn=torch.nn.MSELoss()
-lr=0.000001
+lr=0.00005
 load_params=True
-num_epochs = 0
+num_epochs = 200
 d=32
 
 
@@ -187,7 +187,7 @@ def train_epoch(encoder, decoder, device, dataloader, loss_fn, optimizer):
         # Print batch loss
         # print('\t partial train loss (single batch): %f' % (loss.item()))
         train_loss.append(loss.item())
-        print(mu.shape)
+        
     
 
     return np.mean(train_loss)
