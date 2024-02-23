@@ -141,7 +141,7 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,sh
 loss_fn=torch.nn.MSELoss()
 lr=0.00005
 load_params=True
-num_epochs = 200
+num_epochs = 0
 d=32
 
 
@@ -178,7 +178,7 @@ def train_epoch(encoder, decoder, device, dataloader, loss_fn, optimizer):
         encoded_data=mu+sigma*torch.randn_like(sigma)#this line ensure normal distribution
         decoded_data = decoder(encoded_data)
         # Evaluate loss
-        kl_div_loss=-0.11*torch.mean(1+torch.log(sigma+(1e-13))-torch.pow(mu,2)-torch.pow(sigma,2))
+        kl_div_loss=-0.11*torch.mean(1+torch.log(sigma+(1e-13))-torch.pow(mu,2)-torch.pow(sigma,2))#beta=0.11
         loss = loss_fn(decoded_data, image_batch)+kl_div_loss
         # Backward pass
         optimizer.zero_grad()
@@ -326,6 +326,6 @@ def latent_space_sampling(distribution,encoder,decoder):
     plt.show()
             
 
-latent_space_sampling("normal",encoder,decoder)
+latent_space_sampling("gauss",encoder,decoder)
 
 '''------------------------------------------------------------------------------------'''
