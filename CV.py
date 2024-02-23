@@ -305,14 +305,14 @@ def latent_space_sampling(distribution,encoder,decoder):
             # sample latent vectors from the normal distribution
             latent = torch.rand_like(mu)
             break
-    elif distribution=="gauss":
+    elif distribution=="gauss":#gauss(1,2)
 
         for images, labels in test_loader:
             images = images.to(device)
             mu,sigma = encoder(images)
 
             # sample latent vectors from the normal distribution
-            latent = 1+(2)*torch.rand_like(mu)
+            latent = 1+(2**0.5)*torch.rand_like(mu)
             break
 
     # reconstruct images from the random latent vectors
@@ -326,6 +326,6 @@ def latent_space_sampling(distribution,encoder,decoder):
     plt.show()
             
 
-latent_space_sampling("gauss",encoder,decoder)
+latent_space_sampling("normal",encoder,decoder)
 
 '''------------------------------------------------------------------------------------'''
