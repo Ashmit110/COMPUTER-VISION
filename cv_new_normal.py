@@ -10,7 +10,7 @@ Original file is located at
 import torch
 import numpy as np
 import torch.nn as nn
-from torch.optim import Adam
+from torch.optim import Adam ,lr_scheduler
 import matplotlib.pyplot as plt
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader,random_split
@@ -46,10 +46,10 @@ m=len(train_dataset)
 train_data, val_data = random_split(train_dataset, [int(m-m*0.2), int(m*0.2)])
 
 batch_size = 100
-lr=2e-4
+lr=2e-3
 epochs=100
 load_model=False
-save_model=False
+save_model=True
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(dataset=val_data, batch_size=batch_size,)
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
@@ -143,12 +143,13 @@ class VAE(nn.Module):
 model = VAE().to(device)
 
 optimizer = Adam(model.parameters(), lr=lr)
+scheduler=lr_scheduler.CosineAnnealingLR(optimizer,epochs)
 if load_model==True:
     load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_model_normal"),model,optimizer)
 
 def loss_function(x, x_hat, mean, log_var):
     reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
-    KLD = - 0.4 * torch.sum(1+ log_var - mean.pow(2) - log_var.exp())
+    KLD = - 0.41 * torch.sum(1+ log_var - mean.pow(2) - log_var.exp())
 
     return reproduction_loss + KLD
 
@@ -168,7 +169,7 @@ def train(model, optimizer, epochs, device, x_dim=784):
 
             loss.backward()
             optimizer.step()
-
+        scheduler.step()
         print("\tEpoch", epoch + 1, "\tAverage Loss: ", overall_loss/(batch_idx*batch_size))
     
     return overall_loss

@@ -91,6 +91,103 @@ we can see that our Average Loss has decreased indicating that puting a learning
 
 #### RUN3
 
+This time i introduced a learning rate scheduler(CosineAnnealing) to decrease average loss and reduced beta by a small value(beta =0.37) to improve model reconstruction.
+
+
+lr=2e-3
+
+epochs=100
+
+scheduler=lr_scheduler.CosineAnnealingLR(optimizer,epochs)
+
+
+![1709051373230](image/README_normal/1709051373230.png)
+
+![1709051631988](image/README_normal/1709051631988.png)
+
+![1709051659880](image/README_normal/1709051659880.png)
+
+
+![1709051701590](image/README_normal/1709051701590.png)
+
+Epoch 100       Average Loss:  133.04838779150145
+
+Using the learning rate scheduler drastically reduced the loss function there is a possibility that reconstruction error in the number 4 and 5 were due to insufficient training.
+
+#### RUN 4
+
+i reset the beta to 0.5 and ran the program for 100 epochs again keeping everything else same as RUN 3
+
+![1709052602713](image/README_normal/1709052602713.png)
+
+![1709052816544](image/README_normal/1709052816544.png)
+
+![1709052837447](image/README_normal/1709052837447.png)
+
+![1709052890103](image/README_normal/1709052890103.png)
+
+Epoch 97        Average Loss:  134.65710326129488
+        Epoch 98        Average Loss:  134.63398435869678
+        Epoch 99        Average Loss:  134.61825924066153
+        Epoch 100       Average Loss:  134.61606616496243
+
+
+Maybe beta does play a role since quality of reconstruction image did decrease on increasing beta but we can conclude that using the learning rate scheduler helps the model to converge quickly.
+
+
+#### RUN5
+
+beta=0.38 rest all remains same
+
+![1709053581837](image/README_normal/1709053581837.png)
+
+![1709053819433](image/README_normal/1709053819433.png)
+
+![1709053879827](image/README_normal/1709053879827.png)
+
+
+![1709053913757](image/README_normal/1709053913757.png)
+
+Epoch 97        Average Loss:  132.81137304035371
+        Epoch 98        Average Loss:  132.80125701038187
+        Epoch 99        Average Loss:  132.78727953164127
+        Epoch 100       Average Loss:  132.77616765246765
+
+RUN6
+
+beta=0.39
+
+![1709054851831](image/README_normal/1709054851831.png)
+
+![1709055054322](image/README_normal/1709055054322.png)
+
+![1709055104260](image/README_normal/1709055104260.png)
+
+![1709055149102](image/README_normal/1709055149102.png)
+
+Epoch 97        Average Loss:  133.6997262038293
+        Epoch 98        Average Loss:  133.68240534354132
+        Epoch 99        Average Loss:  133.68140502725896
+        Epoch 100       Average Loss:  133.67117148372287
+
+RUN 7(Final)
+
+beta=0.41
+
+![1709056256425](image/README_normal/1709056256425.png)
+
+![1709056448009](image/README_normal/1709056448009.png)
+
+![1709056472395](image/README_normal/1709056472395.png)![1709056516972](image/README_normal/1709056516972.png)
+
+
+
+
+
+
+
+
+
 
 
 
