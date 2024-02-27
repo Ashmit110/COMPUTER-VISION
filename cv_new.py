@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader,random_split
 import torchvision.transforms as transforms
 from mpl_toolkits.axes_grid1 import ImageGrid
 from torchvision.utils import save_image, make_grid
+import pandas as pd
 
 '''--------------------------Defining function so that i can save progress-----------------------------------'''
 def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
@@ -46,7 +47,9 @@ train_data, val_data = random_split(train_dataset, [int(m-m*0.2), int(m*0.2)])
 
 batch_size = 100
 lr=1e-4
-epochs=200
+epochs=50
+load_model=True
+save_model=True
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(dataset=val_data, batch_size=batch_size,)
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
@@ -153,7 +156,10 @@ class VAE(nn.Module):
         return x_hat, mean, log_var
 
 model = VAE().to(device)
-optimizer = Adam(model.parameters(), lr=lr,weight_decay=5e-7)
+
+optimizer = Adam(model.parameters(), lr=lr,weight_decay=1e-7)
+if load_model==True:
+    load_checkpoint(torch.load("C:\python learning\SAIDL\COMPUTER VISION\checkpoint_model_final"),model,optimizer)
 
 def loss_function(x, x_hat, mean, log_var):
     reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
@@ -196,7 +202,7 @@ def plot_ae_outputs(model,n=10):
          img_lin = img.view(1, 784).to(device)
          x_hat,mean,log_var=model(img_lin)
          
-         digit = x_hat.detach().cpu().reshape(28, 28)
+         
          rec_img  = x_hat.view(img.size())
       plt.imshow(img.cpu().squeeze().numpy(), cmap='gist_gray')
       ax.get_xaxis().set_visible(False)
@@ -225,7 +231,7 @@ def generate_digit(mean, var):
     plt.show()
 
 #img1: mean0, var1 / img2: mean1, var0
-generate_digit(0.0, 1.0), generate_digit(1.0, 0.0)
+# generate_digit(0.0, 1.0), generate_digit(1.0, 0.0)
 
 def plot_latent_space(model, scale=5.0, n=25, digit_size=28, figsize=15):
     # display a n*n 2D manifold of digits
@@ -256,7 +262,43 @@ def plot_latent_space(model, scale=5.0, n=25, digit_size=28, figsize=15):
     plt.imshow(figure, cmap="Greys_r")
     plt.show()
 
-plot_latent_space(model, scale=1.0)
+# plot_latent_space(model, scale=1.0)
 
 plot_latent_space(model, scale=5.0)
 
+
+'''------------------------------------------------plotting latent space in 2d using tsne dimention reduction----------------------------------------------------------------'''
+encoded_samples = []
+from tqdm import tqdm
+for sample in tqdm(test_dataset):
+    img = sample[0].unsqueeze(0).to(device)
+    label = sample[1]
+    # Encode image
+    model.eval()
+    with torch.no_grad():
+        img_lin = img.view(1, 784).to(device)
+        encoded_img  = model.encode(img_lin)
+    # Append to list
+    encoded_img = encoded_img[0].flatten().cpu().numpy()
+    encoded_sample = {f"Enc. Variable {i}": enc for i, enc in enumerate(encoded_img)}
+    encoded_sample['label'] = label
+    encoded_samples.append(encoded_sample)
+encoded_samples = pd.DataFrame(encoded_samples)
+encoded_samples
+
+from sklearn.manifold import TSNE
+import plotly.express as px
+
+tsne = TSNE(n_components=2)
+tsne_results = tsne.fit_transform(encoded_samples.drop(['label'],axis=1))
+fig = px.scatter(tsne_results, x=0, y=1,
+                  color=encoded_samples.label.astype(str),
+                    labels={'0': 'tsne-2d-one', '1': 'tsne-2d-two'})
+fig.show()
+
+if save_model==True:
+    checkpoint_model={
+                "state_dict":model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+            }
+    save_checkpoint(checkpoint_model,"C:\python learning\SAIDL\COMPUTER VISION\checkpoint_model_final")
