@@ -47,9 +47,10 @@ train_data, val_data = random_split(train_dataset, [int(m-m*0.2), int(m*0.2)])
 
 batch_size = 100
 lr=2e-3
-epochs=100
+epochs=15
 load_model=False
-save_model=True
+save_model=False
+plot_tsne=True
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(dataset=val_data, batch_size=batch_size,)
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
@@ -149,6 +150,9 @@ if load_model==True:
 
 def loss_function(x, x_hat, mean, log_var):
     reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
+    
+    # KLD = - 0.41 * torch.sum(1+ log_var - mean.pow(2) - log_var.exp())
+    # KLD = - 0.41 * torch.sum((2)+ log_var-torch.log(2*torch.ones_like(log_var)) - (mean-1).pow(2) - (log_var.exp()))#gauss(1,2)
     KLD = - 0.41 * torch.sum(1+ log_var - mean.pow(2) - log_var.exp())
 
     return reproduction_loss + KLD
@@ -224,33 +228,34 @@ def generate_digit(mean, var):
 
 
 '''------------------------------------------------plotting latent space in 2d using tsne dimention reduction----------------------------------------------------------------'''
-encoded_samples = []
-from tqdm import tqdm
-for sample in tqdm(test_dataset):
-    img = sample[0].unsqueeze(0).to(device)
-    label = sample[1]
-    # Encode image
-    model.eval()
-    with torch.no_grad():
-        img_lin = img.view(1, 784).to(device)
-        encoded_img  = model.encode(img_lin)
-    # Append to list
-    encoded_img = encoded_img[0].flatten().cpu().numpy()
-    encoded_sample = {f"Enc. Variable {i}": enc for i, enc in enumerate(encoded_img)}
-    encoded_sample['label'] = label
-    encoded_samples.append(encoded_sample)
-encoded_samples = pd.DataFrame(encoded_samples)
-encoded_samples
+if plot_tsne==True:
+    encoded_samples = []
+    from tqdm import tqdm
+    for sample in tqdm(test_dataset):
+        img = sample[0].unsqueeze(0).to(device)
+        label = sample[1]
+        # Encode image
+        model.eval()
+        with torch.no_grad():
+            img_lin = img.view(1, 784).to(device)
+            encoded_img  = model.encode(img_lin)
+        # Append to list
+        encoded_img = encoded_img[0].flatten().cpu().numpy()
+        encoded_sample = {f"Enc. Variable {i}": enc for i, enc in enumerate(encoded_img)}
+        encoded_sample['label'] = label
+        encoded_samples.append(encoded_sample)
+    encoded_samples = pd.DataFrame(encoded_samples)
+    encoded_samples
 
-from sklearn.manifold import TSNE
-import plotly.express as px
+    from sklearn.manifold import TSNE
+    import plotly.express as px
 
-tsne = TSNE(n_components=2)
-tsne_results = tsne.fit_transform(encoded_samples.drop(['label'],axis=1))
-fig = px.scatter(tsne_results, x=0, y=1,
-                  color=encoded_samples.label.astype(str),
-                    labels={'0': 'tsne-2d-one', '1': 'tsne-2d-two'})
-fig.show()
+    tsne = TSNE(n_components=2)
+    tsne_results = tsne.fit_transform(encoded_samples.drop(['label'],axis=1))
+    fig = px.scatter(tsne_results, x=0, y=1,
+                    color=encoded_samples.label.astype(str),
+                        labels={'0': 'tsne-2d-one', '1': 'tsne-2d-two'})
+    fig.show()
 '''---------------------------------------------------------------------------------------------------------'''
 
 def plot_latent_space(model, scale=5.0, n=25, digit_size=28, figsize=15):
@@ -282,11 +287,68 @@ def plot_latent_space(model, scale=5.0, n=25, digit_size=28, figsize=15):
     plt.imshow(figure, cmap="Greys_r")
     plt.show()
 
-plot_latent_space(model, scale=1.0)
+# plot_latent_space(model, scale=1.0)
 
-plot_latent_space(model, scale=5.0,n=25)
+# plot_latent_space(model, scale=5.0,n=25)
 
 
+
+#plot samples from the latent space that follows a distribution
+def sample_latent_space_distribution(type,model, scale=5.0, n=25, digit_size=28, figsize=15):
+    # display a n*n 2D manifold of digits
+    model.eval()
+    figure = np.zeros((digit_size * n, digit_size * n))
+
+    # construct a grid
+    grid_x = np.linspace(-scale, scale, n)
+    grid_y = np.linspace(-scale, scale, n)[::-1]
+    if type=="normal":
+        title="Sampling using standard normal distribution"
+        for i, yi in enumerate(np.random.normal(0,1,len(grid_y))):
+            for j, xi in enumerate(np.random.normal(0,1,len(grid_x))):
+                z_sample = torch.tensor([[xi, yi]], dtype=torch.float).to(device)
+                x_decoded = model.decode(z_sample)
+                digit = x_decoded[0].detach().cpu().reshape(digit_size, digit_size)
+                figure[i * digit_size : (i + 1) * digit_size, j * digit_size : (j + 1) * digit_size,] = digit
+    elif type=="gauss(1,2)":
+        title="Sampling using Gauss(1,2) distribution"
+        for i, yi in enumerate(np.random.normal(1,2**0.5,len(grid_y))):
+            for j, xi in enumerate(np.random.normal(1,2**0.5,len(grid_x))):
+                z_sample = torch.tensor([[xi, yi]], dtype=torch.float).to(device)
+                x_decoded = model.decode(z_sample)
+                digit = x_decoded[0].detach().cpu().reshape(digit_size, digit_size)
+                figure[i * digit_size : (i + 1) * digit_size, j * digit_size : (j + 1) * digit_size,] = digit
+
+    elif type=="gamma(3,2)":
+        title="Sampling using Gamma(3,2) distribution"
+        for i, yi in enumerate(np.random.gamma(3,2,len(grid_y))):
+            for j, xi in enumerate(np.random.normal(3,2,len(grid_x))):
+                z_sample = torch.tensor([[xi, yi]], dtype=torch.float).to(device)
+                x_decoded = model.decode(z_sample)
+                digit = x_decoded[0].detach().cpu().reshape(digit_size, digit_size)
+                figure[i * digit_size : (i + 1) * digit_size, j * digit_size : (j + 1) * digit_size,] = digit
+
+    else:
+        return print("invalid type")
+    
+    plt.figure(figsize=(figsize, figsize))
+    plt.title(title)
+    start_range = digit_size // 2
+    end_range = n * digit_size + start_range
+    pixel_range = np.arange(start_range, end_range, digit_size)
+    sample_range_x = np.round(grid_x, 1)
+    sample_range_y = np.round(grid_y, 1)
+    
+    plt.xlabel(" z0 ")
+    plt.ylabel(" z1 ")
+    plt.imshow(figure, cmap="Greys_r")
+    plt.show()
+
+
+
+sample_latent_space_distribution("normal",model,scale=5,n=25)
+sample_latent_space_distribution("gauss(1,2)",model,scale=5,n=25)
+sample_latent_space_distribution("gamma(3,2)",model,scale=5,n=25)
 
 
 

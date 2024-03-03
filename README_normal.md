@@ -33,7 +33,19 @@ After a failed attempt i started to look up implemetations online and found [lin
 
 (Note might try to fix my Conv architecture if time allows)
 
-#### RUN1
+MY APPROACH
+
+during the following runs i plotted multiple plots
+
+1) original image vs reconstructed images
+   this allowed me to keep a track whether or not the model is able to reconstruct its encodings from the latent space.
+2) VAE latent space visualization
+   to check the continuity in the latent space,they are formed from uniformely sampled points(2 graphs at different scale)
+   NOTE-the x axis actually stands for z1 and y axis stands for z2,where z1 and z2 are latent space encodings
+3) TSNE dimentional plot
+   helps visualize how the images are distributed or clustered in the latent space.
+
+#### RUN 1
 
 lr=1e-4
 
@@ -89,10 +101,9 @@ observation
 
 we can see that our Average Loss has decreased indicating that puting a learning rate decay was useful and also the quality of reconstructed 4 has also improved so changing beta was also a right decision.
 
-#### RUN3
+#### RUN 3
 
 This time i introduced a learning rate scheduler(CosineAnnealing) to decrease average loss and reduced beta by a small value(beta =0.37) to improve model reconstruction.
-
 
 lr=2e-3
 
@@ -100,13 +111,11 @@ epochs=100
 
 scheduler=lr_scheduler.CosineAnnealingLR(optimizer,epochs)
 
-
 ![1709051373230](image/README_normal/1709051373230.png)
 
 ![1709051631988](image/README_normal/1709051631988.png)
 
 ![1709051659880](image/README_normal/1709051659880.png)
-
 
 ![1709051701590](image/README_normal/1709051701590.png)
 
@@ -131,11 +140,9 @@ Epoch 97        Average Loss:  134.65710326129488
         Epoch 99        Average Loss:  134.61825924066153
         Epoch 100       Average Loss:  134.61606616496243
 
-
 Maybe beta does play a role since quality of reconstruction image did decrease on increasing beta but we can conclude that using the learning rate scheduler helps the model to converge quickly.
 
-
-#### RUN5
+#### RUN 5-7 ( Just finetuning beta)
 
 beta=0.38 rest all remains same
 
@@ -144,7 +151,6 @@ beta=0.38 rest all remains same
 ![1709053819433](image/README_normal/1709053819433.png)
 
 ![1709053879827](image/README_normal/1709053879827.png)
-
 
 ![1709053913757](image/README_normal/1709053913757.png)
 
@@ -180,33 +186,40 @@ beta=0.41
 
 ![1709056472395](image/README_normal/1709056472395.png)![1709056516972](image/README_normal/1709056516972.png)
 
+These Results are satisfactory as it ensures that there is continuity in the latent space while also clustering of the similar type of images.
 
+## RESULTS
 
+Sampling from Standard Normal Distribution
 
+![1709315257730](image/README_normal/1709315257730.png)
 
+Sampling from Gauss(1,2) Distribution
 
+![1709315328567](image/README_normal/1709315328567.png)
 
+Sampling from Gamma(3,2) distribution
 
+![1709315383762](image/README_normal/1709315383762.png)
 
+LATENT SPACE
 
+![1709315839223](image/README_normal/1709315839223.png)
 
+## OBSERVATIONS
 
+Sampling from normal dustribution yields best result because the kl divergence loss was designed so it forces images to be centered around(0,0) in the latent space.
 
+Sampling from the Gauss(1,2) distribution also gives sufficiently good results because it is not very far from the origin.
 
+But the quality of generation from the gamma (3,2) distribution are worse because there is not much density in that area of the latent space therefore model cant generate good results.
 
+## FOR EVALUATOR
 
+the task for sampling/creating the latent space for a gauss(1,2 ) distribution posed mathematical complication for me as the concepts of probablities used seemed too advanced, but by reading the paper i did understand that in order to change the latent space distribution i would have to change my KLD loss.
 
+here is my attempt
 
+KLD = - 0.41 * torch.sum(2+ log_var-torch.log(2*torch.ones_like(log_var) ) - (mean-1).pow(2) - log_var.exp()  )#gauss(1,2)
 
-
-/
-
-Epoch 500       Average Loss:  134.4445011216611
-
-![1709035405468](image/eadmefinal/1709035405468.png)
-
-![1709035463425](image/eadmefinal/1709035463425.png)
-
-![1709036033640](image/eadmefinal/1709036033640.png)
-
-Epoch 500       Average Loss:  134.4445011216611
+i have an introductory idea about the plotting libaries so most of the code for plotting these are copied from github and modified for my application,so i was unable to visualise weather my modification worked correctly or not.
